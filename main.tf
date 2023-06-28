@@ -90,3 +90,14 @@ resource "aws_security_group" "sg_1" {
     Name = "${var.prefix}-sg-1"
   }
 }
+
+resource "aws_instance" "ec2_1" {
+  ami                    = "ami-04b3f91ebd5bc4f6d"
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.subnet_1.id
+  vpc_security_group_ids = [aws_security_group.sg_1.id]
+
+  tags = {
+    Name = "${var.prefix}-ec2-1"
+  }
+}
