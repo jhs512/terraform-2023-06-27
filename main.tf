@@ -64,8 +64,29 @@ resource "aws_route_table" "rt_1" {
 }
 
 
-
 resource "aws_route_table_association" "association_1" {
   subnet_id      = aws_subnet.subnet_1.id
   route_table_id = aws_route_table.rt_1.id
+}
+
+resource "aws_security_group" "sg_1" {
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "all"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "all"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  vpc_id = aws_vpc.vpc_1.id
+
+  tags = {
+    Name = "${var.prefix}-sg-1"
+  }
 }
