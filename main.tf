@@ -33,9 +33,10 @@ resource "aws_vpc" "vpc_1" {
 }
 
 resource "aws_subnet" "subnet_1" {
-  vpc_id            = aws_vpc.vpc_1.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "${var.region}a"
+  vpc_id                  = aws_vpc.vpc_1.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "${var.region}a"
+  map_public_ip_on_launch = true
 
   tags = {
     Name = "${var.prefix}-subnet-1"
@@ -92,10 +93,11 @@ resource "aws_security_group" "sg_1" {
 }
 
 resource "aws_instance" "ec2_1" {
-  ami                    = "ami-04b3f91ebd5bc4f6d"
-  instance_type          = "t2.micro"
-  subnet_id              = aws_subnet.subnet_1.id
-  vpc_security_group_ids = [aws_security_group.sg_1.id]
+  ami                         = "ami-04b3f91ebd5bc4f6d"
+  instance_type               = "t2.micro"
+  subnet_id                   = aws_subnet.subnet_1.id
+  vpc_security_group_ids      = [aws_security_group.sg_1.id]
+  associate_public_ip_address = true
 
   tags = {
     Name = "${var.prefix}-ec2-1"
