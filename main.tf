@@ -103,3 +103,37 @@ resource "aws_instance" "ec2_1" {
     Name = "${var.prefix}-ec2-1"
   }
 }
+
+# Create IAM role for EC2
+resource "aws_iam_role" "ec2_role_1" {
+  name = "${var.prefix}-ec2-role-1"
+
+  assume_role_policy = <<EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Action": "sts:AssumeRole",
+        "Principal": {
+          "Service": "ec2.amazonaws.com"
+        },
+        "Effect": "Allow",
+        "Sid": ""
+      }
+    ]
+  }
+  EOF
+}
+
+
+# Attach AmazonS3FullAccess policy to the EC2 role
+resource "aws_iam_role_policy_attachment" "s3_full_access" {
+  role       = aws_iam_role.ec2_role_1.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+# Attach AmazonEC2RoleforSSM policy to the EC2 role
+resource "aws_iam_role_policy_attachment" "ec2_ssm" {
+  role       = aws_iam_role.ec2_role_1.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+}
