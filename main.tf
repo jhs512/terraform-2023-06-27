@@ -92,18 +92,6 @@ resource "aws_security_group" "sg_1" {
   }
 }
 
-resource "aws_instance" "ec2_1" {
-  ami                         = "ami-04b3f91ebd5bc4f6d"
-  instance_type               = "t2.micro"
-  subnet_id                   = aws_subnet.subnet_1.id
-  vpc_security_group_ids      = [aws_security_group.sg_1.id]
-  associate_public_ip_address = true
-
-  tags = {
-    Name = "${var.prefix}-ec2-1"
-  }
-}
-
 # Create IAM role for EC2
 resource "aws_iam_role" "ec2_role_1" {
   name = "${var.prefix}-ec2-role-1"
@@ -136,4 +124,24 @@ resource "aws_iam_role_policy_attachment" "s3_full_access" {
 resource "aws_iam_role_policy_attachment" "ec2_ssm" {
   role       = aws_iam_role.ec2_role_1.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+}
+
+resource "aws_iam_instance_profile" "instance_profile_1" {
+  name = "${var.prefix}-instance-profile-1"
+  role = aws_iam_role.ec2_role_1.name
+}
+
+resource "aws_instance" "ec2_1" {
+  ami                         = "ami-04b3f91ebd5bc4f6d"
+  instance_type               = "t2.micro"
+  subnet_id                   = aws_subnet.subnet_1.id
+  vpc_security_group_ids      = [aws_security_group.sg_1.id]
+  associate_public_ip_address = true
+
+  # Assign IAM role to the instance
+  iam_instance_profile = aws_iam_instance_profile.instance_profile_1.name
+
+  tags = {
+    Name = "${var.prefix}-ec2-1"
+  }
 }
