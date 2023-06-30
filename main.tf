@@ -154,23 +154,25 @@ resource "aws_s3_bucket" "bucket_jhs512_1" {
   }
 }
 
+data "aws_iam_policy_document" "bucket_jhs512_1_policy_1_statement" {
+  statement {
+    sid    = "PublicReadGetObject"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.bucket_jhs512_1.arn}/*"]
+  }
+}
+
 resource "aws_s3_bucket_policy" "bucket_jhs512_1_policy_1" {
   bucket = aws_s3_bucket.bucket_jhs512_1.id
 
-  policy     = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::dev-bucket-jhs512-1/*"
-        }
-    ]
-}
-EOF
+  policy = data.aws_iam_policy_document.bucket_jhs512_1_policy_1_statement.json
 
   depends_on = [aws_s3_bucket_public_access_block.bucket_jhs512_1_public_access_block_1]
 }
@@ -182,4 +184,20 @@ resource "aws_s3_bucket_public_access_block" "bucket_jhs512_1_public_access_bloc
   block_public_policy     = false
   ignore_public_acls      = false
   restrict_public_buckets = false
+}
+
+resource "aws_route53_zone" "vpc_1_zone" {
+  vpc {
+    vpc_id = aws_vpc.vpc_1.id
+  }
+
+  name = "vpc-1.com"
+}
+
+resource "aws_route53_record" "record_ec2-1_vpc-1_com" {
+  zone_id = aws_route53_zone.vpc_1_zone.zone_id
+  name    = "ec2-1.vpc-1.com"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.ec2_1.private_ip]
 }
