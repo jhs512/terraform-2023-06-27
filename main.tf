@@ -145,3 +145,11 @@ resource "aws_instance" "ec2_1" {
     Name = "${var.prefix}-ec2-1"
   }
 }
+
+resource "aws_s3_bucket" "bucket_jhs512_1" {
+  bucket = "${var.prefix}-bucket-jhs512-1"
+
+  tags = {
+    Name = "${var.prefix}-bucket-jhs512-1"
+  }
+}
