@@ -153,3 +153,22 @@ resource "aws_s3_bucket" "bucket_jhs512_1" {
     Name = "${var.prefix}-bucket-jhs512-1"
   }
 }
+
+resource "aws_s3_bucket_policy" "bucket_jhs512_1_policy_1" {
+  bucket = aws_s3_bucket.bucket_jhs512_1.id
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::dev-bucket-jhs512-1/*"
+        }
+    ]
+}
+EOF
+}
