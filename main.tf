@@ -157,7 +157,7 @@ resource "aws_s3_bucket" "bucket_jhs512_1" {
 resource "aws_s3_bucket_policy" "bucket_jhs512_1_policy_1" {
   bucket = aws_s3_bucket.bucket_jhs512_1.id
 
-  policy = <<EOF
+  policy     = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -171,6 +171,8 @@ resource "aws_s3_bucket_policy" "bucket_jhs512_1_policy_1" {
     ]
 }
 EOF
+
+  depends_on = [aws_s3_bucket_public_access_block.bucket_jhs512_1_public_access_block_1]
 }
 
 resource "aws_s3_bucket_public_access_block" "bucket_jhs512_1_public_access_block_1" {
