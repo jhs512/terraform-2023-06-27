@@ -172,3 +172,12 @@ resource "aws_s3_bucket_policy" "bucket_jhs512_1_policy_1" {
 }
 EOF
 }
+
+resource "aws_s3_bucket_public_access_block" "bucket_jhs512_1_public_access_block_1" {
+  bucket = aws_s3_bucket.bucket_jhs512_1.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
