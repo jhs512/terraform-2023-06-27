@@ -219,7 +219,7 @@ data "template_file" "template_file_1" {
 
 resource "aws_s3_object" "object" {
   bucket       = aws_s3_bucket.bucket_2.id
-  key          = "index.html"
+  key          = "public/index.html"
   content      = data.template_file.template_file_1.rendered
   content_type = "text/html"
 
@@ -262,6 +262,7 @@ resource "aws_cloudfront_distribution" "cd_1" {
 
   origin {
     domain_name              = aws_s3_bucket.bucket_2.bucket_regional_domain_name
+    origin_path              = "/public"
     origin_id                = "origin_id_1"
     origin_access_control_id = aws_cloudfront_origin_access_control.oac_1.id
   }
