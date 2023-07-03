@@ -7,3 +7,8 @@ variable "region" {
   description = "region"
   default     = "ap-northeast-2"
 }
+
+variable "nickname" {
+  description = "nickname"
+  default     = "jhs512"
+}
