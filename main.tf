@@ -96,6 +96,8 @@ resource "aws_route_table_association" "association_2" {
 }
 
 resource "aws_security_group" "sg_1" {
+  name = "${var.prefix}-sg-1"
+
   ingress {
     from_port   = 0
     to_port     = 0
@@ -317,4 +319,84 @@ resource "aws_s3_bucket_policy" "bucket_2_policy_1" {
   bucket = aws_s3_bucket.bucket_2.id
 
   policy = data.aws_iam_policy_document.bucket_2_policy_1_statement.json
+}
+
+resource "aws_db_subnet_group" "db_subnet_group_1" {
+  name       = "${var.prefix}-db-subnet-group-1"
+  subnet_ids = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
+
+  tags = {
+    Name = "${var.prefix}-db-subnet-group-1"
+  }
+}
+
+resource "aws_db_parameter_group" "mariadb_parameter_group_1" {
+  name   = "${var.prefix}-mariadb-parameter-group-1"
+  family = "mariadb10.6"
+
+  parameter {
+    name  = "character_set_client"
+    value = "utf8mb4"
+  }
+
+  parameter {
+    name  = "character_set_connection"
+    value = "utf8mb4"
+  }
+
+  parameter {
+    name  = "character_set_database"
+    value = "utf8mb4"
+  }
+
+  parameter {
+    name  = "character_set_filesystem"
+    value = "utf8mb4"
+  }
+
+  parameter {
+    name  = "character_set_results"
+    value = "utf8mb4"
+  }
+
+  parameter {
+    name  = "character_set_server"
+    value = "utf8mb4"
+  }
+
+  parameter {
+    name  = "collation_connection"
+    value = "utf8mb4_general_ci"
+  }
+
+  parameter {
+    name  = "collation_server"
+    value = "utf8mb4_general_ci"
+  }
+
+  tags = {
+    Name = "${var.prefix}-mariadb-parameter-group"
+  }
+}
+
+resource "aws_db_instance" "db_1" {
+  identifier              = "${var.prefix}-db-1"
+  allocated_storage       = 20
+  max_allocated_storage   = 1000
+  engine                  = "mariadb"
+  engine_version          = "10.6.10"
+  instance_class          = "db.t3.micro"
+  publicly_accessible     = true
+  username                = "admin"
+  password                = "lldj123414"
+  parameter_group_name    = aws_db_parameter_group.mariadb_parameter_group_1.name
+  backup_retention_period = 0
+  skip_final_snapshot     = true
+  vpc_security_group_ids  = [aws_security_group.sg_1.id]
+  db_subnet_group_name    = aws_db_subnet_group.db_subnet_group_1.name
+  availability_zone       = "${var.region}a"
+
+  tags = {
+    Name = "${var.prefix}-db-1"
+  }
 }
