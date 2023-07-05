@@ -12,3 +12,13 @@ variable "nickname" {
   description = "nickname"
   default     = "jhs512"
 }
+
+variable "domain_1_zone_id" {
+  description = "domain_1_zone_id"
+  default     = "Z01639813R4IOKR4DCVZ"
+}
+
+variable "domain_1" {
+  description = "domain_1"
+  default     = "dlike.me"
+}

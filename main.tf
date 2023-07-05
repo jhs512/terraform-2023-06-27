@@ -400,3 +400,21 @@ resource "aws_db_instance" "db_1" {
     Name = "${var.prefix}-db-1"
   }
 }
+
+# For EC2 Instance
+resource "aws_route53_record" "domain_1_ec2_1" {
+  zone_id = var.domain_1_zone_id
+  name    = "ec2-1.${var.domain_1}"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.ec2_1.public_ip]
+}
+
+# For RDS Instance
+resource "aws_route53_record" "domain_1_db_1" {
+  zone_id = var.domain_1_zone_id
+  name    = "db-1.${var.domain_1}"
+  type    = "CNAME"
+  ttl     = "300"
+  records = [aws_db_instance.db_1.address]
+}
