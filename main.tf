@@ -212,10 +212,9 @@ resource "aws_db_instance" "db_1" {
   }
 }
 
-# For RDS Instance
-resource "aws_route53_record" "domain_1_db_1" {
-  zone_id = var.domain_1_zone_id
-  name    = "db-1.${var.domain_1}"
+resource "aws_route53_record" "record_db-1_vpc-1_com" {
+  zone_id = aws_route53_zone.vpc_1_zone.zone_id
+  name    = "db-1.vpc-1.com"
   type    = "CNAME"
   ttl     = "300"
   records = [aws_db_instance.db_1.address]
