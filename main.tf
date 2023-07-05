@@ -388,7 +388,7 @@ resource "aws_db_instance" "db_1" {
   instance_class          = "db.t3.micro"
   publicly_accessible     = true
   username                = "admin"
-  password                = "lldj123414"
+  password                = var.db_password
   parameter_group_name    = aws_db_parameter_group.mariadb_parameter_group_1.name
   backup_retention_period = 0
   skip_final_snapshot     = true
