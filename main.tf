@@ -201,7 +201,7 @@ resource "aws_db_instance" "db_1" {
   username                = "admin"
   password                = var.db_password
   parameter_group_name    = aws_db_parameter_group.mariadb_parameter_group_1.name
-  backup_retention_period = 0
+  backup_retention_period = 1
   skip_final_snapshot     = true
   vpc_security_group_ids  = [aws_security_group.sg_1.id]
   db_subnet_group_name    = aws_db_subnet_group.db_subnet_group_1.name
@@ -218,5 +218,34 @@ resource "aws_route53_record" "record_db-1_vpc-1_com" {
   type    = "CNAME"
   ttl     = "300"
   records = [aws_db_instance.db_1.address]
+}
+
+# db-2 생성
+resource "aws_db_instance" "db_2" {
+  identifier             = "${var.prefix}-db-2"
+  engine                 = "mariadb"
+  engine_version         = "10.6.10"
+  instance_class         = "db.t3.micro"
+  publicly_accessible    = true
+  parameter_group_name   = aws_db_parameter_group.mariadb_parameter_group_1.name
+  skip_final_snapshot    = true
+  vpc_security_group_ids = [aws_security_group.sg_1.id]
+  availability_zone      = "${var.region}b"  # different zone for high availability
+
+  # replication configuration
+  replicate_source_db = aws_db_instance.db_1.identifier  # specify the master DB instance identifier here
+
+  tags = {
+    Name = "${var.prefix}-db-2"
+  }
+}
+
+# Route53 record for db-2
+resource "aws_route53_record" "record_db-2_vpc-1_com" {
+  zone_id = aws_route53_zone.vpc_1_zone.zone_id
+  name    = "db-2.vpc-1.com"
+  type    = "CNAME"
+  ttl     = "300"
+  records = [aws_db_instance.db_2.address]
 }
 # RDS 설정 끝
