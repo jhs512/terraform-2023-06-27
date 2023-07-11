@@ -131,121 +131,35 @@ resource "aws_route53_zone" "vpc_1_zone" {
 }
 # ROUTE 53 설정 끝
 
-# RDS 설정 시작
-resource "aws_db_subnet_group" "db_subnet_group_1" {
-  name       = "${var.prefix}-db-subnet-group-1"
-  subnet_ids = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
+# Post 테이블 생성
+resource "aws_dynamodb_table" "dynamodb_table_post" {
+  name           = "post"
+  billing_mode   = "PROVISIONED"
+  read_capacity  = 5
+  write_capacity = 5
+  hash_key       = "id"
 
-  tags = {
-    Name = "${var.prefix}-db-subnet-group-1"
+  attribute {
+    name = "id"
+    type = "S"
   }
 }
 
-resource "aws_db_parameter_group" "mariadb_parameter_group_1" {
-  name   = "${var.prefix}-mariadb-parameter-group-1"
-  family = "mariadb10.6"
+resource "aws_dynamodb_table" "dynamodb_table_chatMessage" {
+  name           = "chatMessage"
+  billing_mode   = "PROVISIONED"
+  read_capacity  = 5
+  write_capacity = 5
+  hash_key       = "chatRoomId"
+  range_key      = "createDate"
 
-  parameter {
-    name  = "character_set_client"
-    value = "utf8mb4"
+  attribute {
+    name = "chatRoomId"
+    type = "N"
   }
 
-  parameter {
-    name  = "character_set_connection"
-    value = "utf8mb4"
-  }
-
-  parameter {
-    name  = "character_set_database"
-    value = "utf8mb4"
-  }
-
-  parameter {
-    name  = "character_set_filesystem"
-    value = "utf8mb4"
-  }
-
-  parameter {
-    name  = "character_set_results"
-    value = "utf8mb4"
-  }
-
-  parameter {
-    name  = "character_set_server"
-    value = "utf8mb4"
-  }
-
-  parameter {
-    name  = "collation_connection"
-    value = "utf8mb4_general_ci"
-  }
-
-  parameter {
-    name  = "collation_server"
-    value = "utf8mb4_general_ci"
-  }
-
-  tags = {
-    Name = "${var.prefix}-mariadb-parameter-group"
+  attribute {
+    name = "createDate"
+    type = "S"
   }
 }
-
-resource "aws_db_instance" "db_1" {
-  identifier              = "${var.prefix}-db-1"
-  allocated_storage       = 20
-  max_allocated_storage   = 1000
-  engine                  = "mariadb"
-  engine_version          = "10.6.10"
-  instance_class          = "db.t3.micro"
-  publicly_accessible     = true
-  username                = "admin"
-  password                = var.db_password
-  parameter_group_name    = aws_db_parameter_group.mariadb_parameter_group_1.name
-  backup_retention_period = 1
-  skip_final_snapshot     = true
-  vpc_security_group_ids  = [aws_security_group.sg_1.id]
-  db_subnet_group_name    = aws_db_subnet_group.db_subnet_group_1.name
-  availability_zone       = "${var.region}a"
-
-  tags = {
-    Name = "${var.prefix}-db-1"
-  }
-}
-
-resource "aws_route53_record" "record_db-1_vpc-1_com" {
-  zone_id = aws_route53_zone.vpc_1_zone.zone_id
-  name    = "db-1.vpc-1.com"
-  type    = "CNAME"
-  ttl     = "300"
-  records = [aws_db_instance.db_1.address]
-}
-
-# db-2 생성
-resource "aws_db_instance" "db_2" {
-  identifier             = "${var.prefix}-db-2"
-  engine                 = "mariadb"
-  engine_version         = "10.6.10"
-  instance_class         = "db.t3.micro"
-  publicly_accessible    = true
-  parameter_group_name   = aws_db_parameter_group.mariadb_parameter_group_1.name
-  skip_final_snapshot    = true
-  vpc_security_group_ids = [aws_security_group.sg_1.id]
-  availability_zone      = "${var.region}b"  # different zone for high availability
-
-  # replication configuration
-  replicate_source_db = aws_db_instance.db_1.identifier  # specify the master DB instance identifier here
-
-  tags = {
-    Name = "${var.prefix}-db-2"
-  }
-}
-
-# Route53 record for db-2
-resource "aws_route53_record" "record_db-2_vpc-1_com" {
-  zone_id = aws_route53_zone.vpc_1_zone.zone_id
-  name    = "db-2.vpc-1.com"
-  type    = "CNAME"
-  ttl     = "300"
-  records = [aws_db_instance.db_2.address]
-}
-# RDS 설정 끝
