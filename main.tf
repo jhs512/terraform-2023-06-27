@@ -126,40 +126,78 @@ resource "aws_route53_zone" "vpc_1_zone" {
   vpc {
     vpc_id = aws_vpc.vpc_1.id
   }
-
   name = "vpc-1.com"
 }
 # ROUTE 53 설정 끝
 
-# Post 테이블 생성
-resource "aws_dynamodb_table" "dynamodb_table_post" {
-  name           = "post"
-  billing_mode   = "PROVISIONED"
-  read_capacity  = 5
-  write_capacity = 5
-  hash_key       = "id"
+# EC2 설정 시작
+resource "aws_iam_role" "ec2_role_1" {
+  name = "${var.prefix}-ec2-role-1"
 
-  attribute {
-    name = "id"
-    type = "S"
+  assume_role_policy = <<EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "",
+        "Action": "sts:AssumeRole",
+        "Principal": {
+          "Service": "ec2.amazonaws.com"
+        },
+        "Effect": "Allow"
+      }
+    ]
+  }
+  EOF
+}
+
+# Attach AmazonS3FullAccess policy to the EC2 role
+resource "aws_iam_role_policy_attachment" "s3_full_access" {
+  role       = aws_iam_role.ec2_role_1.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+# Attach AmazonEC2RoleforSSM policy to the EC2 role
+resource "aws_iam_role_policy_attachment" "ec2_ssm" {
+  role       = aws_iam_role.ec2_role_1.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+}
+
+resource "aws_iam_instance_profile" "instance_profile_1" {
+  name = "${var.prefix}-instance-profile-1"
+  role = aws_iam_role.ec2_role_1.name
+}
+
+resource "aws_instance" "ec2_1" {
+  ami                         = "ami-04b3f91ebd5bc4f6d"
+  instance_type               = "t2.micro"
+  subnet_id                   = aws_subnet.subnet_1.id
+  vpc_security_group_ids      = [aws_security_group.sg_1.id]
+  associate_public_ip_address = true
+
+  # Assign IAM role to the instance
+  iam_instance_profile = aws_iam_instance_profile.instance_profile_1.name
+
+  tags = {
+    Name = "${var.prefix}-ec2-1"
   }
 }
 
-resource "aws_dynamodb_table" "dynamodb_table_chatMessage" {
-  name           = "chatMessage"
-  billing_mode   = "PROVISIONED"
-  read_capacity  = 5
-  write_capacity = 5
-  hash_key       = "chatRoomId"
-  range_key      = "createDate"
-
-  attribute {
-    name = "chatRoomId"
-    type = "N"
-  }
-
-  attribute {
-    name = "createDate"
-    type = "S"
-  }
+# ec2-1 에 private 도메인 연결
+resource "aws_route53_record" "record_ec2-1_vpc-1_com" {
+  zone_id = aws_route53_zone.vpc_1_zone.zone_id
+  name    = "ec2-1.vpc-1.com"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.ec2_1.private_ip]
 }
+
+# ec2-1 에 public 도메인 연결
+resource "aws_route53_record" "domain_1_ec2_1" {
+  zone_id = var.domain_1_zone_id
+  name    = "ec2-1.${var.domain_1}"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.ec2_1.public_ip]
+}
+# EC2 설정 끝
