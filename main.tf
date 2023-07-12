@@ -170,7 +170,7 @@ resource "aws_iam_instance_profile" "instance_profile_1" {
 
 resource "aws_instance" "ec2_1" {
   ami                         = "ami-04b3f91ebd5bc4f6d"
-  instance_type               = "t2.micro"
+  instance_type               = "t2.large"
   subnet_id                   = aws_subnet.subnet_1.id
   vpc_security_group_ids      = [aws_security_group.sg_1.id]
   associate_public_ip_address = true
@@ -199,5 +199,71 @@ resource "aws_route53_record" "domain_1_ec2_1" {
   type    = "A"
   ttl     = "300"
   records = [aws_instance.ec2_1.public_ip]
+}
+
+resource "aws_instance" "ec2_2" {
+  ami                         = "ami-04b3f91ebd5bc4f6d"
+  instance_type               = "t2.large"
+  subnet_id                   = aws_subnet.subnet_1.id
+  vpc_security_group_ids      = [aws_security_group.sg_1.id]
+  associate_public_ip_address = true
+
+  # Assign IAM role to the instance
+  iam_instance_profile = aws_iam_instance_profile.instance_profile_1.name
+
+  tags = {
+    Name = "${var.prefix}-ec2-2"
+  }
+}
+
+# ec2-1 에 private 도메인 연결
+resource "aws_route53_record" "record_ec2-2_vpc-1_com" {
+  zone_id = aws_route53_zone.vpc_1_zone.zone_id
+  name    = "ec2-2.vpc-1.com"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.ec2_2.private_ip]
+}
+
+# ec2-1 에 public 도메인 연결
+resource "aws_route53_record" "domain_1_ec2_2" {
+  zone_id = var.domain_1_zone_id
+  name    = "ec2-2.${var.domain_1}"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.ec2_2.public_ip]
+}
+
+resource "aws_instance" "ec2_3" {
+  ami                         = "ami-04b3f91ebd5bc4f6d"
+  instance_type               = "t2.large"
+  subnet_id                   = aws_subnet.subnet_1.id
+  vpc_security_group_ids      = [aws_security_group.sg_1.id]
+  associate_public_ip_address = true
+
+  # Assign IAM role to the instance
+  iam_instance_profile = aws_iam_instance_profile.instance_profile_1.name
+
+  tags = {
+    Name = "${var.prefix}-ec2-3"
+  }
+}
+
+# ec2-1 에 private 도메인 연결
+resource "aws_route53_record" "record_ec2-3_vpc-1_com" {
+  zone_id = aws_route53_zone.vpc_1_zone.zone_id
+  name    = "ec2-3.vpc-1.com"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.ec2_3.private_ip]
+}
+
+# ec2-1 에 public 도메인 연결
+resource "aws_route53_record" "domain_1_ec2_3" {
+  zone_id = var.domain_1_zone_id
+  name    = "ec2-3.${var.domain_1}"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.ec2_3.public_ip]
 }
 # EC2 설정 끝
