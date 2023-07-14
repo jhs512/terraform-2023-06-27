@@ -168,6 +168,36 @@ resource "aws_iam_instance_profile" "instance_profile_1" {
   role = aws_iam_role.ec2_role_1.name
 }
 
+variable "ec2_user_data" {
+  description = "User data to be used on these instances"
+  type        = string
+  default     = <<-END_OF_FILE
+#!/bin/bash
+yum install docker -y
+systemctl enable docker
+systemctl start docker
+
+cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kubelet kubeadm kubectl
+EOF
+
+# Set SELinux in permissive mode (effectively disabling it)
+sudo setenforce 0
+sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+
+sudo systemctl enable --now kubelet
+
+END_OF_FILE
+}
+
 resource "aws_instance" "ec2_1" {
   ami                         = "ami-04b3f91ebd5bc4f6d"
   instance_type               = "t2.large"
@@ -181,6 +211,8 @@ resource "aws_instance" "ec2_1" {
   tags = {
     Name = "${var.prefix}-ec2-1"
   }
+
+  user_data = var.ec2_user_data
 }
 
 # ec2-1 에 private 도메인 연결
@@ -214,6 +246,8 @@ resource "aws_instance" "ec2_2" {
   tags = {
     Name = "${var.prefix}-ec2-2"
   }
+
+  user_data = var.ec2_user_data
 }
 
 # ec2-1 에 private 도메인 연결
@@ -247,6 +281,8 @@ resource "aws_instance" "ec2_3" {
   tags = {
     Name = "${var.prefix}-ec2-3"
   }
+
+  user_data = var.ec2_user_data
 }
 
 # ec2-1 에 private 도메인 연결
