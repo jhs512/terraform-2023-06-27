@@ -168,10 +168,8 @@ resource "aws_iam_instance_profile" "instance_profile_1" {
   role = aws_iam_role.ec2_role_1.name
 }
 
-variable "ec2_user_data" {
-  description = "User data to be used on these instances"
-  type        = string
-  default     = <<-END_OF_FILE
+locals {
+  ec2_user_data_base = <<-END_OF_FILE
 #!/bin/bash
 yum install docker -y
 systemctl enable docker
@@ -191,12 +189,17 @@ EOF
 sudo setenforce 0
 sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
-sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
-sudo systemctl enable --now kubelet
-
 # Disable swap
 swapoff -a
 sed -i '/swap/s/^/#/' /etc/fstab
+
+# containerd setting
+containerd config default > /etc/containerd/config.toml
+sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+systemctl restart containerd
+
+sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+sudo systemctl enable --now kubelet
 
 END_OF_FILE
 }
@@ -215,7 +218,8 @@ resource "aws_instance" "ec2_1" {
     Name = "${var.prefix}-ec2-1"
   }
 
-  user_data = var.ec2_user_data
+
+  user_data = local.ec2_user_data_base
 }
 
 # ec2-1 에 private 도메인 연결
@@ -250,7 +254,7 @@ resource "aws_instance" "ec2_2" {
     Name = "${var.prefix}-ec2-2"
   }
 
-  user_data = var.ec2_user_data
+  user_data = local.ec2_user_data_base
 }
 
 # ec2-1 에 private 도메인 연결
@@ -285,7 +289,7 @@ resource "aws_instance" "ec2_3" {
     Name = "${var.prefix}-ec2-3"
   }
 
-  user_data = var.ec2_user_data
+  user_data = local.ec2_user_data_base
 }
 
 # ec2-1 에 private 도메인 연결
