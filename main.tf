@@ -1,14 +1,4 @@
 terraform {
-  // 이 부분은 terraform cloud에서 설정한 workspace의 이름과 동일해야 함
-  // 이 부분은 terraform login 후에 사용가능함
-  cloud {
-    organization = "og-1"
-
-    workspaces {
-      name = "ws-1"
-    }
-  }
-
   // 자바의 import 와 비슷함
   // aws 라이브러리 불러옴
   required_providers {
@@ -202,6 +192,49 @@ sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 sudo systemctl enable --now kubelet
 
 END_OF_FILE
+
+
+  ec2_user_data_cluster = <<-END_OF_FILE
+
+kubeadm init --pod-network-cidr=10.10.0.0/16 > /root/kubeadm-init.log
+
+mkdir -p $HOME/.kube
+cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+chown $(id -u):$(id -g) $HOME/.kube/config
+
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/tigera-operator.yaml
+
+mkdir /kube
+
+cat <<EOF | tee /kube/calico-resources.yaml
+# This section includes base Calico installation configuration.
+# For more information, see: https://projectcalico.docs.tigera.io/master/reference/installation/api#operator.tigera.io/v1.Installation
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+spec:
+  calicoNetwork:
+    bgp: Disabled
+    ipPools:
+    - cidr: 10.10.0.0/16
+      encapsulation: VXLAN
+
+---
+
+# This section configures the Calico API server.
+# For more information, see: https://projectcalico.docs.tigera.io/master/reference/installation/api#operator.tigera.io/v1.APIServer
+apiVersion: operator.tigera.io/v1
+kind: APIServer
+metadata:
+  name: default
+spec: {}
+EOF
+
+kubectl create -f calico-resources.yaml
+systemctl restart containerd
+
+END_OF_FILE
 }
 
 resource "aws_instance" "ec2_1" {
@@ -219,7 +252,7 @@ resource "aws_instance" "ec2_1" {
   }
 
 
-  user_data = local.ec2_user_data_base
+  user_data = "${local.ec2_user_data_base}${local.ec2_user_data_cluster}"
 }
 
 # ec2-1 에 private 도메인 연결
